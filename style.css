@@ -1,0 +1,156 @@
+/* =========================================
+   1. VARIABLES & RESET
+   ========================================= */
+:root {
+    --font-primary: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --header-height: 70px;
+    --color-bg: #09090b;
+    --color-text: #ffffff;
+    --color-muted: #a1a1aa;
+    --red: #ef4444;
+    --green: #22c55e;
+    --blue: #3b82f6;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body { 
+    background: var(--color-bg); 
+    color: var(--color-text); 
+    font-family: var(--font-primary); 
+    overflow: hidden; /* Prevents whole page scroll */
+    
+    /* CRITICAL: Prevents "Bouncy" scroll effect on iOS */
+    overscroll-behavior-y: none;
+    
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* =========================================
+   2. HEADER & FILTERS
+   ========================================= */
+.app-header {
+    position: fixed; top: 0; left: 0; width: 100%; height: var(--header-height);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 1rem;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.95), transparent);
+    z-index: 100;
+}
+.brand h1 { font-size: 1.2rem; font-weight: 900; font-style: italic; color: var(--green); margin-right: 1rem; letter-spacing: -0.05em; }
+
+.filter-bar {
+    display: flex; gap: 0.5rem; overflow-x: auto; 
+    scrollbar-width: none; -ms-overflow-style: none; padding-right: 1rem;
+}
+.filter-bar::-webkit-scrollbar { display: none; }
+
+.filter-btn {
+    background: rgba(255,255,255,0.1); border: none; color: var(--color-muted);
+    padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+    white-space: nowrap; transition: all 0.2s; cursor: pointer;
+}
+.filter-btn.active { background: white; color: black; }
+
+.status-indicator { margin-left: auto; }
+.live-dot { width: 8px; height: 8px; background: var(--red); border-radius: 50%; animation: pulse 2s infinite; display: block;}
+
+/* =========================================
+   3. FEED CONTAINER
+   ========================================= */
+.progress-container { position: fixed; top: 0; left: 0; width: 100%; height: 3px; z-index: 150; }
+.progress-fill { height: 100%; background: var(--green); width: 0%; transition: width 0.2s; }
+
+.scroll-container {
+    height: 100vh; height: 100dvh; 
+    width: 100%; overflow-y: scroll;
+    scroll-snap-type: y mandatory; scroll-behavior: smooth;
+    scrollbar-width: none;
+    
+    /* CRITICAL: Ensures content inside scrolls, but body doesn't bounce */
+    overscroll-behavior-y: contain; 
+}
+.scroll-container::-webkit-scrollbar { display: none; }
+
+/* =========================================
+   4. CARDS
+   ========================================= */
+.card {
+    height: 100vh; height: 100dvh;
+    width: 100%; scroll-snap-align: start;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 2rem; border-bottom: 1px solid rgba(255,255,255,0.05);
+    position: relative; transition: opacity 0.5s ease;
+    user-select: none; -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
+.card.is-read { opacity: 0.3; }
+.card.is-read:hover { opacity: 1; }
+
+.card-meta { font-family: monospace; font-size: 0.8rem; color: var(--color-muted); margin-bottom: 1rem; display: flex; justify-content: space-between; }
+.card-category { border: 1px solid var(--color-muted); padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+
+.card-headline { font-size: 2.8rem; line-height: 0.95; font-weight: 900; text-transform: uppercase; margin-bottom: 1.5rem; letter-spacing: -0.04em; }
+.card-hook { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; letter-spacing: -0.01em; }
+.card-body { font-size: 1.1rem; line-height: 1.5; color: var(--color-muted); max-width: 600px; }
+
+/* Action Bar */
+.action-bar { margin-top: 2rem; display: flex; gap: 1rem; z-index: 10; }
+.icon-btn {
+    background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white; padding: 12px 24px; border-radius: 50px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; transition: 0.2s;
+}
+.icon-btn:active { transform: scale(0.95); }
+.icon-btn.liked { color: var(--red); background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); }
+
+/* Subscribe Card */
+.subscribe-card { background: linear-gradient(135deg, #18181b 0%, #000000 100%); align-items: center; text-align: center; }
+/* Font size 16px prevents iOS zooming on focus */
+.subscribe-input { padding: 1rem; width: 100%; max-width: 300px; border-radius: 8px; margin-bottom: 1rem; border: none; font-size: 16px; }
+.subscribe-btn { background: var(--green); border: none; padding: 1rem 2rem; width: 100%; max-width: 300px; border-radius: 8px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+
+/* =========================================
+   5. TOAST & MODAL
+   ========================================= */
+.toast-container {
+    position: fixed; top: 100px; left: 50%; transform: translateX(-50%);
+    z-index: 300; display: flex; flex-direction: column; gap: 10px;
+    pointer-events: none; width: 90%; max-width: 300px;
+}
+.toast {
+    background: rgba(255, 255, 255, 0.95); color: black; padding: 12px 20px;
+    border-radius: 8px; font-weight: 600; text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 200;
+    display: flex; align-items: flex-end; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.modal-overlay.active { opacity: 1; pointer-events: all; }
+.modal-content {
+    background: #18181b; width: 100%; max-width: 600px; height: 80vh;
+    border-radius: 24px 24px 0 0; padding: 2.5rem 2rem;
+    transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex; flex-direction: column;
+}
+.modal-overlay.active .modal-content { transform: translateY(0); }
+.close-btn { position: absolute; top: 1rem; right: 1rem; background: #27272a; border: none; color: white; width: 36px; height: 36px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; }
+.read-more-btn { margin-top: auto; background: white; color: black; text-align: center; padding: 1rem; border-radius: 12px; font-weight: 800; text-decoration: none; text-transform: uppercase; }
+
+.skeleton-card { background: #09090b; }
+.skeleton-line { background: linear-gradient(90deg, #18181b 25%, #27272a 50%, #18181b 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; margin-bottom: 1rem; }
+.skeleton-line.title { height: 60px; width: 80%; }
+.skeleton-line.text { height: 20px; width: 100%; }
+.theme-red { background: #2a0a0a; } .theme-red .card-hook { color: var(--red); }
+.theme-blue { background: #0f172a; } .theme-blue .card-hook { color: var(--blue); }
+.theme-green { background: #052e16; } .theme-green .card-hook { color: var(--green); }
+.hidden { display: none !important; }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+@keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
