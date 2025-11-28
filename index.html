@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Viewport: strict locking to prevent accidental zooming -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <title>High Frequency | Daily Feed</title>
+    <meta name="description" content="Intelligence at the speed of culture.">
+    
+    <!-- Professional Favicon (Lightning Bolt) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+
+    <!-- Social Sharing Tags -->
+    <meta property="og:title" content="High Frequency">
+    <meta property="og:description" content="Daily insights on Markets, Tech, and Politics.">
+    <meta property="og:type" content="website">
+
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+
+    <!-- 1. PROGRESS BAR -->
+    <div class="progress-container">
+        <div id="progress-fill" class="progress-fill"></div>
+    </div>
+
+    <!-- 2. HEADER -->
+    <header class="app-header">
+        <div class="brand"><h1>HF//APP</h1></div>
+        <nav class="filter-bar">
+            <button class="filter-btn active" data-filter="ALL">All</button>
+            <button class="filter-btn" data-filter="MARKETS">Markets</button>
+            <button class="filter-btn" data-filter="TECH">Tech</button>
+            <button class="filter-btn" data-filter="POLITICS">Politics</button>
+        </nav>
+        <div class="status-indicator">
+            <span class="live-dot"></span>
+        </div>
+    </header>
+
+    <!-- 3. FEED CONTAINER -->
+    <main id="feed-container" class="scroll-container">
+        <!-- Skeleton Loader -->
+        <article class="card skeleton-card">
+            <div class="skeleton-line title"></div>
+            <div class="skeleton-line text"></div>
+            <div class="skeleton-line text"></div>
+        </article>
+    </main>
+
+    <!-- 4. MODAL -->
+    <div id="story-modal" class="modal-overlay hidden" aria-hidden="true">
+        <div class="modal-content">
+            <button id="close-modal" class="close-btn">&times;</button>
+            <div id="modal-body-content"></div>
+            <a href="#" id="modal-source-link" target="_blank" class="read-more-btn">Read Source</a>
+        </div>
+    </div>
+
+    <!-- 5. TOAST NOTIFICATIONS -->
+    <div id="toast-container" class="toast-container"></div>
+
+</body>
+</html>
+
+
