@@ -38,7 +38,7 @@ const rawStories = [
         theme: "green"
     },
     {
-        id: 47⁹,
+        id: 4,
         category: "To Talent Mbewe",
         headlcine: "Im sorry i made you cry, again!",
         hook: "Youre my world. My joy, my pain. You're the best girlfriend",
