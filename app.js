@@ -36,7 +36,18 @@ const rawStories = [
         source_url: "https://reuters.com",
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
         theme: "green"
-    }
+    },
+    {
+        id: 47⁹,
+        category: "To Talent Mbewe",
+        headlcine: "Im sorry i made you cry, again!",
+        hook: "Youre my world. My joy, my pain. You're the best girlfriend",
+        body: "I hope you had a good day my love.",
+        deep_dive: "my ride or die",
+        source_url: "https://reuters.com",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
+        theme: "green"
+}
 ];
 
 const Utils = {
