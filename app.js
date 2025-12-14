@@ -1,7 +1,6 @@
 /**
- * HIGH FREQUENCY APP v12.0 (SMART PARSER)
- * Fixes: Commas in text breaking the layout
- * Fixes: Image loading issues
+ * HIGH FREQUENCY APP v13.0 (FILTER FIX)
+ * Fixes: Case-insensitive filtering (Markets vs MARKETS)
  */
 
 // 1. CONFIGURATION
@@ -56,24 +55,15 @@ const AppState = {
 // ==========================================
 // 3. SMART DATA ENGINE
 // ==========================================
-
-// Helper: correctly parses CSV lines even with commas inside quotes
 function parseCSVLine(str) {
     const result = [];
     let current = '';
     let inQuote = false;
-    
     for (let i = 0; i < str.length; i++) {
         const char = str[i];
-        
-        if (char === '"') {
-            inQuote = !inQuote;
-        } else if (char === ',' && !inQuote) {
-            result.push(current.trim());
-            current = '';
-        } else {
-            current += char;
-        }
+        if (char === '"') inQuote = !inQuote;
+        else if (char === ',' && !inQuote) { result.push(current.trim()); current = ''; } 
+        else current += char;
     }
     result.push(current.trim());
     return result.map(text => text.replace(/^"|"$/g, '').replace(/""/g, '"'));
@@ -81,47 +71,30 @@ function parseCSVLine(str) {
 
 async function loadStories() {
     console.log("Starting App...");
-    
     try {
         const response = await fetch(SHEET_URL);
         if (!response.ok) throw new Error("Sheet response failed");
         
         const text = await response.text();
-        console.log("Sheet downloaded. Parsing...");
-        
-        const rows = text.split('\n').slice(1); // Remove header
+        const rows = text.split('\n').slice(1); 
         
         const parsedStories = rows.map((row, index) => {
-            // Use the Smart Parser
             const cols = parseCSVLine(row);
-            
-            // Check if we have enough data (min 5 columns)
             if (cols.length < 5) return null;
-
-            // MAPPING (Based on your wide screenshot):
-            // 0: id
-            // 1: category
-            // 2: headline
-            // 3: hook
-            // 4: body
-            // 5: deep_dive
-            // 6: source_url
-            // 7: image
-            // 8: theme
 
             return {
                 id: index + 100,
-                category: cols[1],
+                category: cols[1], // Category is Column B
                 headline: cols[2],
                 hook: cols[3],
                 body: cols[4],
                 deep_dive: cols[5],
                 source_url: cols[6],
-                image: cols[7], // Must be a URL!
+                image: cols[7], 
                 theme: cols[8] || 'blue',
                 timestamp: new Date().toISOString()
             };
-        }).filter(s => s !== null && s.headline); // Filter empty rows
+        }).filter(s => s !== null && s.headline);
 
         if (parsedStories.length === 0) throw new Error("No stories found in sheet");
 
@@ -139,7 +112,7 @@ async function loadStories() {
 }
 
 // ==========================================
-// 4. RENDERING
+// 4. RENDERING (FIXED FILTERING)
 // ==========================================
 function timeAgo(dateString) { return "Today"; } 
 function getThemeClass(theme) {
@@ -151,11 +124,22 @@ const container = document.getElementById('feed-container');
 
 function renderFeed() {
     container.innerHTML = ''; 
-    const filtered = AppState.currentFilter === 'ALL' 
-        ? AppState.stories : AppState.stories.filter(s => s.category === AppState.currentFilter);
+    
+    // FIX: Filter is now Case-Insensitive (Markets == MARKETS)
+    const targetFilter = AppState.currentFilter.toUpperCase().trim();
+    
+    const filtered = targetFilter === 'ALL' 
+        ? AppState.stories 
+        : AppState.stories.filter(s => s.category && s.category.toUpperCase().trim() === targetFilter);
 
     if (filtered.length === 0) {
-        container.innerHTML = '<div class="card"><h2 class="card-headline">No stories found.</h2></div>';
+        // Show user friendly message if filter is empty
+        container.innerHTML = `
+            <div class="card" style="justify-content: center; align-items: center; text-align: center;">
+                <h2 class="card-headline" style="font-size: 2rem; color: #555;">No Stories Found</h2>
+                <p class="card-body">We couldn't find any "${AppState.currentFilter}" stories today.</p>
+                <button class="filter-btn active" style="margin-top: 1rem;" onclick="location.reload()">Refresh App</button>
+            </div>`;
         return;
     }
 
@@ -166,7 +150,6 @@ function renderFeed() {
         const isLiked = AppState.isLiked(story.id) ? 'liked' : '';
         const likeCount = 100 + (isLiked ? 1 : 0); 
 
-        // Handle Image: Only show if it looks like a Link (http)
         let imageHTML = '';
         if (story.image && story.image.includes('http')) {
             imageHTML = `
@@ -174,8 +157,8 @@ function renderFeed() {
                 <img src="${story.image}" class="card-image" loading="lazy" alt="News">
             </div>`;
         } else {
-            // Fallback for missing/bad images so layout stays nice
-            imageHTML = `<div class="card-image-container" style="background: #222; display: flex; align-items: center; justify-content: center; color: #555;">No Image URL</div>`;
+             // Fallback to keep layout consistent
+             imageHTML = `<div class="card-image-container" style="background: #222;"></div>`;
         }
 
         article.innerHTML = `
