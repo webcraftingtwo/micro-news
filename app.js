@@ -5,7 +5,7 @@
 
 // 1. CONFIGURATION
 // Paste your "Published to Web" CSV link inside the quotes
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRRNfPMeMACHMDYGRs4OIJqQJq7qN7q_E7bX4gZ5q5q5q5q5q5q5q5q/pub?output=csv"; 
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRRNPWeMACmMOYGRs40Ij2W7lSJ4EdbubacRWC1p1hChwZlm6Bzp-uUR6cZw1IAb-ie-fwk3Udx4ZkZ/pub?output=csv"; 
 // ^ IMPORTANT: REPLACE THE LINK ABOVE WITH YOUR ACTUAL CSV LINK IF DIFFERENT
 
 // 2. BACKUP DATA (Safety Net)
