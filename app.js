@@ -1,14 +1,13 @@
 /**
- * HIGH FREQUENCY APP v10.2 (CLEAN INSTALL)
- * Fixes: Syntax Error & Loading Glitch
+ * HIGH FREQUENCY APP v11.0 (FIXED)
+ * Fixes: Syntax Error & Column Mapping
  */
 
 // 1. CONFIGURATION
-// Paste your "Published to Web" CSV link inside the quotes
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRRNPWeMACmMOYGRs40Ij2W7lSJ4EdbubacRWC1p1hChwZlm6Bzp-uUR6cZw1IAb-ie-fwk3Udx4ZkZ/pub?output=csv"; 
-// ^ IMPORTANT: REPLACE THE LINK ABOVE WITH YOUR ACTUAL CSV LINK IF DIFFERENT
+// Keep your existing link if it is correct.
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRRNPWeMACmMOYGRs40Ij2W7lSJ4EdbubacRWC1p1hChwZlm6Bzp-uUR6cZw1IAb-ie-fwk3Udx4ZkZ/pub?output=csv";
 
-// 2. BACKUP DATA (Safety Net)
+// 2. BACKUP DATA
 const BACKUP_STORIES = [
     {
         id: 1,
@@ -16,21 +15,9 @@ const BACKUP_STORIES = [
         image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1000",
         headline: "Connection Issue",
         hook: "Loading backup data.",
-        body: "We couldn't reach the live Google Sheet. Showing cached stories instead. Check your URL or internet connection.",
-        deep_dive: "If you are the developer: Check the Console (F12) to see the specific error message.",
+        body: "We couldn't parse the Google Sheet. This usually means the columns in the sheet don't match the code.",
+        deep_dive: "Make sure your Sheet has exactly these headers in Row 1: id, category, headline, hook, body, deep_dive, source_url, image, theme",
         source_url: "#",
-        theme: "red",
-        timestamp: new Date().toISOString()
-    },
-    {
-        id: 2,
-        category: "MARKETS",
-        image: "https://images.unsplash.com/photo-1611974765270-ca1258634369?q=80&w=1000", 
-        headline: "Crypto Flash Crash",
-        hook: "Bitcoin dropped $2k in 30 seconds.",
-        body: "Whales are dumping positions. Liquidation levels hit $500M. If you are holding leverage, watch your margin closely.",
-        deep_dive: "The crash was triggered by a cascading liquidation event on Binance.",
-        source_url: "https://bloomberg.com",
         theme: "red",
         timestamp: new Date().toISOString()
     }
@@ -73,21 +60,21 @@ async function loadStories() {
     console.log("Starting App...");
     
     try {
-        // Check if URL is placeholder
-        if (SHEET_URL.includes("PASTE_YOUR")) throw new Error("URL is still placeholder");
-
         const response = await fetch(SHEET_URL);
         if (!response.ok) throw new Error("Sheet response failed");
         
         const text = await response.text();
+        console.log("Sheet downloaded. Parsing...");
         
         // Parse CSV
         const rows = text.split('\n').slice(1); // Remove header
         const parsedStories = rows.map((row, index) => {
-            // Handle CSV commas correctly
+            // Regex to handle commas inside quotes
             const cols = row.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
             const clean = (txt) => txt ? txt.replace(/^"|"$/g, '').trim() : '';
             
+            // Critical Check: Do we have enough columns?
+            // If the sheet has fewer than 5 columns filled, we skip the row to avoid errors.
             if (cols.length < 5) return null; 
 
             return {
@@ -104,7 +91,7 @@ async function loadStories() {
             };
         }).filter(s => s !== null);
 
-        if (parsedStories.length === 0) throw new Error("No stories found in sheet");
+        if (parsedStories.length === 0) throw new Error("No stories found. Check Sheet Columns.");
 
         AppState.stories = parsedStories;
         console.log("Loaded stories:", parsedStories.length);
@@ -146,6 +133,11 @@ function renderFeed() {
         article.dataset.id = story.id;
         const isLiked = AppState.isLiked(story.id) ? 'liked' : '';
         const likeCount = 100 + (isLiked ? 1 : 0); 
+        
+        // Fallback image if column is empty
+        const imageSrc = story.image && story.image.length > 10 
+            ? story.image 
+            : "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1000";
 
         article.innerHTML = `
             <div class="card-meta">
@@ -153,7 +145,7 @@ function renderFeed() {
                 <span>LIVE</span>
             </div>
             <div class="card-image-container">
-                <img src="${story.image}" class="card-image" loading="lazy" alt="News" onerror="this.style.display='none'">
+                <img src="${imageSrc}" class="card-image" loading="lazy" alt="News">
             </div>
             <h2 class="card-headline">${story.headline}</h2>
             <p class="card-hook">${story.hook}</p>
@@ -277,10 +269,16 @@ function openModal(id) {
     const story = AppState.stories.find(s => s.id == id);
     if (!story) return;
     history.pushState({ modalOpen: true }, '', '#story');
+    
+    // Fallback if sheet image is empty
+    const imageSrc = story.image && story.image.length > 10 
+            ? story.image 
+            : "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1000";
+
     modalBody.innerHTML = `
         <span style="font-family:monospace; color: #a1a1aa;">${story.category}</span>
         <div class="card-image-container" style="height: 180px; margin-bottom: 1rem;">
-             <img src="${story.image}" class="card-image" style="filter: none;">
+             <img src="${imageSrc}" class="card-image" style="filter: none;">
         </div>
         <h3 style="font-size: 2rem; margin: 0.5rem 0 1rem 0; text-transform: uppercase;">${story.headline}</h3>
         <p style="font-size: 1.2rem; line-height: 1.6; color: #e4e4e7;">${story.deep_dive}</p>
