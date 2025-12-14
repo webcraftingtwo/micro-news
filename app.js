@@ -1,56 +1,18 @@
 /**
- * HIGH FREQUENCY APP v9.0 (DESIGN INTEGRATED)
- * Includes: Back Button, Safe Storage, AND Image Support
+ * HIGH FREQUENCY APP v10.0 (LIVE DATA)
+ * Connected to Google Sheets via CSV
  */
 
-const rawStories = [
-    {
-        id: 1,
-        category: "MARKETS",
-        image: "https://images.unsplash.com/photo-1611974765270-ca1258634369?q=80&w=1000&auto=format&fit=crop", 
-        headline: "Crypto Flash Crash",
-        hook: "Bitcoin dropped $2k in 30 seconds.",
-        body: "Whales are dumping positions. Liquidation levels hit $500M. If you are holding leverage, watch your margin closely.",
-        deep_dive: "The crash was triggered by a cascading liquidation event on Binance. Over $500M in long positions were wiped out in a single minute.",
-        source_url: "https://bloomberg.com",
-        timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-        theme: "red"
-    },
-    {
-        id: 2,
-        category: "TECH",
-        image: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=1000&auto=format&fit=crop",
-        headline: "AI Agents Live",
-        hook: "The new model codes without humans.",
-        body: "OpenAI just dropped the update. Developers are reporting it can deploy full apps from a single prompt.",
-        deep_dive: "This isn't just a chatbot. These agents have permission to access file systems.",
-        source_url: "https://openai.com",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
-        theme: "blue"
-    },
-    {
-        id: 3,
-        category: "POLITICS",
-        image: "https://images.unsplash.com/photo-1526304640152-d4619684e484?q=80&w=1000&auto=format&fit=crop",
-        headline: "Green Bill Pass",
-        hook: "Solar stocks are about to fly.",
-        body: "The senate passed the subsidy package at 2am. Look for tickers in the renewable sector.",
-        deep_dive: "The bill includes a 30% tax credit for residential solar and a $50B grant.",
-        source_url: "https://reuters.com",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
-        theme: "green"
-    }
-];
+// 1. CONFIGURATION
+// PASTE YOUR GOOGLE SHEET CSV LINK HERE (Keep the quotes!)
+const SHEET_URL = "PASTE_YOUR_GOOGLE_SHEET_CSV_LINK_HERE"; 
 
 const Utils = {
-    getStorage(key) {
-        try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; }
-    },
-    setStorage(key, value) {
-        try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
-    },
+    getStorage(key) { try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; } },
+    setStorage(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {} },
     showToast(message) {
         const container = document.getElementById('toast-container');
+        if (!container) return;
         const toast = document.createElement('div');
         toast.className = 'toast';
         toast.textContent = message;
@@ -65,6 +27,7 @@ const Utils = {
 const AppState = {
     likes: Utils.getStorage('hf_likes') || [],
     currentFilter: 'ALL',
+    stories: [], // Data now lives here, empty at start
     toggleLike(id) {
         if (this.likes.includes(id)) this.likes = this.likes.filter(lid => lid !== id);
         else this.likes.push(id);
@@ -74,17 +37,58 @@ const AppState = {
     isLiked(id) { return this.likes.includes(id); }
 };
 
-function timeAgo(dateString) {
-    const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);
-    let interval = seconds / 3600;
-    if (interval > 1) return Math.floor(interval) + "h ago";
-    interval = seconds / 60;
-    if (interval > 1) return Math.floor(interval) + "m ago";
-    return "Just now";
+// ==========================================
+// 2. DATA ENGINE (CSV PARSER)
+// ==========================================
+async function loadStories() {
+    try {
+        const response = await fetch(SHEET_URL);
+        const text = await response.text();
+        
+        // Parse CSV
+        const rows = text.split('\n').slice(1); // Remove header row
+        AppState.stories = rows.map((row, index) => {
+            // Handle commas inside quotes (Simple regex split)
+            const cols = row.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+            
+            // Cleanup quotes if present
+            const clean = (txt) => txt ? txt.replace(/^"|"$/g, '').trim() : '';
+
+            // Map columns to our object (Order matters based on your sheet!)
+            // Expects: id, category, headline, hook, body, deep_dive, source_url, image, theme
+            if (cols.length < 5) return null; // Skip empty rows
+
+            return {
+                id: index + 1, // Auto-generate ID based on row
+                category: clean(cols[1]),
+                headline: clean(cols[2]),
+                hook: clean(cols[3]),
+                body: clean(cols[4]),
+                deep_dive: clean(cols[5]),
+                source_url: clean(cols[6]),
+                image: clean(cols[7]),
+                theme: clean(cols[8]) || 'blue',
+                timestamp: new Date().toISOString() // Live posts are always "Now"
+            };
+        }).filter(s => s !== null); // Remove empty/failed rows
+
+        renderFeed();
+        setupInteractions();
+
+    } catch (err) {
+        console.error("Failed to load sheet:", err);
+        document.getElementById('feed-container').innerHTML = 
+            '<div class="card"><h2 class="card-headline">Connection Error.<br>Check Sheet URL.</h2></div>';
+    }
 }
 
+// ==========================================
+// 3. RENDERING (Same as before)
+// ==========================================
+function timeAgo(dateString) { return "Today"; } // Simplified for sheet data
+
 function getThemeClass(theme) {
-    const t = theme.toLowerCase();
+    const t = (theme || 'blue').toLowerCase().trim();
     return (t === 'red' || t === 'blue' || t === 'green') ? `theme-${t}` : 'theme-blue';
 }
 
@@ -93,11 +97,11 @@ const container = document.getElementById('feed-container');
 function renderFeed() {
     container.innerHTML = ''; 
     const filtered = AppState.currentFilter === 'ALL' 
-        ? rawStories : rawStories.filter(s => s.category === AppState.currentFilter);
+        ? AppState.stories : AppState.stories.filter(s => s.category === AppState.currentFilter);
 
     if (filtered.length === 0) {
-        container.innerHTML = '<div class="card"><h2 class="card-headline">No stories found.</h2></div>';
-        return;
+        // Show skeleton if loading or empty
+        return; 
     }
 
     filtered.forEach(story => {
@@ -110,12 +114,11 @@ function renderFeed() {
         article.innerHTML = `
             <div class="card-meta">
                 <span class="card-category">${story.category}</span>
-                <span>${timeAgo(story.timestamp)}</span>
+                <span>LIVE</span>
             </div>
             
-            <!-- IMAGE BLOCK (Corrected) -->
             <div class="card-image-container">
-                <img src="${story.image}" class="card-image" loading="lazy" alt="${story.headline}">
+                <img src="${story.image}" class="card-image" loading="lazy" alt="News Image">
             </div>
 
             <h2 class="card-headline">${story.headline}</h2>
@@ -136,7 +139,7 @@ function renderFeed() {
     endCard.classList.add('card', 'subscribe-card');
     endCard.innerHTML = `
         <h2 class="card-headline" style="font-size: 2rem;">Caught Up.</h2>
-        <p class="card-body" style="margin-bottom: 2rem;">Next drop in 12 hours.</p>
+        <p class="card-body" style="margin-bottom: 2rem;">Next drop soon.</p>
         <input type="email" placeholder="Email Address" class="subscribe-input">
         <button class="subscribe-btn action-subscribe">Subscribe</button>
     `;
@@ -145,10 +148,131 @@ function renderFeed() {
     observeCards();
 }
 
+// ==========================================
+// 4. INTERACTIONS (Same as before)
+// ==========================================
 function setupInteractions() {
+    // Only attach listeners once to avoid duplicates
+    if (window.listenersAttached) return;
+    window.listenersAttached = true;
+
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            AppState.currentFilter = e.target.dataset.filter;
+            renderFeed();
+        });
+    });
+
+    container.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('action-subscribe')) {
+            const input = e.target.previousElementSibling;
+            if (input.value.includes('@')) {
+                Utils.showToast("Subscribed successfully!");
+                input.value = '';
+            } else { Utils.showToast("Please enter a valid email."); }
+            return;
+        }
+        const likeBtn = e.target.closest('.like-btn');
+        if (likeBtn) {
+            e.stopPropagation();
+            toggleLikeUI(likeBtn);
+            return;
+        }
+        const shareBtn = e.target.closest('.share-btn');
+        if (shareBtn) {
+            e.stopPropagation();
+            if (navigator.share) navigator.share({ title: 'HF App', url: window.location.href });
+            else {
+                try { await navigator.clipboard.writeText(window.location.href); Utils.showToast("Link copied!"); } 
+                catch (err) { Utils.showToast("Could not copy link."); }
+            }
+            return;
+        }
+        const card = e.target.closest('.card');
+        if (card && card.dataset.id && !e.target.closest('input') && !e.target.closest('button')) {
+            openModal(card.dataset.id);
+        }
+    });
+
+    container.addEventListener('dblclick', (e) => {
+        const card = e.target.closest('.card');
+        if (card) {
+            const likeBtn = card.querySelector('.like-btn');
+            if (likeBtn && !likeBtn.classList.contains('liked')) {
+                toggleLikeUI(likeBtn);
+                Utils.showToast("Liked!");
+            }
+        }
+    });
+
+    container.addEventListener('scroll', () => {
+        const height = container.scrollHeight - container.clientHeight;
+        const scrolled = (container.scrollTop / height) * 100;
+        document.getElementById('progress-fill').style.width = `${scrolled}%`;
+    });
+}
+
+function toggleLikeUI(btnElement) {
+    const card = btnElement.closest('.card');
+    const id = parseInt(card.dataset.id);
+    const isNowLiked = AppState.toggleLike(id);
+    btnElement.classList.toggle('liked', isNowLiked);
+    const countSpan = btnElement.querySelector('.like-count');
+    let count = parseInt(countSpan.textContent);
+    countSpan.textContent = isNowLiked ? count + 1 : count - 1;
+}
+
+function observeCards() {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const card = entry.target;
+            if (!entry.isIntersecting && entry.boundingClientRect.top < 0) card.classList.add('is-read');
+            else if (entry.isIntersecting) card.classList.remove('is-read');
+        });
+    }, { threshold: 0.5 });
+    document.querySelectorAll('.card').forEach(card => observer.observe(card));
+}
+
+// --- MODAL ---
+const modal = document.getElementById('story-modal');
+const modalBody = document.getElementById('modal-body-content');
+const modalLink = document.getElementById('modal-source-link');
+
+function openModal(id) {
+    const story = AppState.stories.find(s => s.id == id);
+    if (!story) return;
+    history.pushState({ modalOpen: true }, '', '#story');
+    modalBody.innerHTML = `
+        <span style="font-family:monospace; color: #a1a1aa;">${story.category}</span>
+        <div class="card-image-container" style="height: 180px; margin-bottom: 1rem;">
+             <img src="${story.image}" class="card-image" style="filter: none;">
+        </div>
+        <h3 style="font-size: 2rem; margin: 0.5rem 0 1rem 0; text-transform: uppercase;">${story.headline}</h3>
+        <p style="font-size: 1.2rem; line-height: 1.6; color: #e4e4e7;">${story.deep_dive}</p>
+    `;
+    modalLink.href = story.source_url;
+    modal.classList.remove('hidden');
+    setTimeout(() => modal.classList.add('active'), 10);
+}
+function closeModal() {
+    modal.classList.remove('active');
+    setTimeout(() => modal.classList.add('hidden'), 300);
+}
+window.addEventListener('popstate', () => { if (!modal.classList.contains('hidden')) closeModal(); });
+document.getElementById('close-modal').addEventListener('click', () => {
+    if (history.state && history.state.modalOpen) history.back();
+    else closeModal();
+});
+
+// ==========================================
+// 5. INIT
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    // START THE ENGINE
+    loadStories();
+});            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
             AppState.currentFilter = e.target.dataset.filter;
             renderFeed();
