@@ -5,7 +5,7 @@
 
 // 1. CONFIGURATION
 // PASTE YOUR GOOGLE SHEET CSV LINK HERE (Keep the quotes!)
-const SHEET_URL = "PASTE_YOUR_GOOGLE_SHEET_CSV_LINK_HERE"; 
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRRNPWeMACmMOYGRs40Ij2W7lSJ4EdbubacRWC1p1hChwZlm6Bzp-uUR6cZw1IAb-ie-fwk3Udx4ZkZ/pub?output=csv"; 
 
 const Utils = {
     getStorage(key) { try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; } },
