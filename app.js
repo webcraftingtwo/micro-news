@@ -5,7 +5,7 @@
 
 // 1. CONFIGURATION
 // Paste your "Published to Web" CSV link here.
-const SHEET_URL = "PASTE_YOUR_GOOGLE_SHEET_CSV_LINK_HERE"; 
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRRNPWeMACmMOYGRs40Ij2W7lSJ4EdbubacRWC1p1hChwZlm6Bzp-uUR6cZw1IAb-ie-fwk3Udx4ZkZ/pub?output=csv"; 
 
 // 2. BACKUP DATA (Loads if Sheet fails)
 const BACKUP_STORIES = [
