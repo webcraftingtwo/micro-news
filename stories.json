@@ -4,9 +4,9 @@
     {
       "category": "TECH",
       "headline": "You're running an app now",
-      "hook": "This whole feed is three files and no server.",
-      "body": "High Frequency is a static web app: one HTML file, one stylesheet, one script. No backend, no database, no build step. It loads instantly and works offline once installed.",
-      "deep_dive": "The card you're reading was rendered from stories.json bundled with the app. If a live Google Sheet is configured, its rows overlay this seed content so anyone can publish by editing a spreadsheet. Everything is cached by a service worker, so a second visit is near-instant and works with no network at all. To make this feed yours, edit stories.json (or point it at your own sheet) and redeploy.",
+      "hook": "This whole feed is three files and a database.",
+      "body": "High Frequency is a static web app backed by Supabase: stories live in Postgres, likes are counted globally, and the feed updates the moment a row changes.",
+      "deep_dive": "The card you're reading came from stories.json bundled with the app — the offline fallback. When Supabase is configured, stories load straight from the database: add a row, set published to true, and it appears in the feed instantly with no deploy. Every heart on every phone updates the same global like counter. To make this feed yours, run supabase-setup.sql in a free Supabase project and drop your keys into CONFIG at the top of app.js.",
       "source_url": "https://github.com/webcraftingtwo/micro-news",
       "image": "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?q=80&w=1000",
       "theme": "green"

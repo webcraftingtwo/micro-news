@@ -3,7 +3,7 @@
  * App-shell caching so the feed loads instantly and works offline.
  * Bump CACHE_VERSION whenever you change the shell files below.
  */
-const CACHE_VERSION = 'hf-v1';
+const CACHE_VERSION = 'hf-v2';
 const SHELL = [
   './',
   './index.html',

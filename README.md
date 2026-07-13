@@ -1,87 +1,92 @@
 # High Frequency (`micro-news`)
 
-A lightning-fast, full-screen, swipeable news feed — think a TikTok-style reader for
-Markets, Tech, and Politics. It's a **static web app** (one HTML file, one stylesheet,
-one script), installable as a **PWA**, and it works offline.
-
-⚡ **No backend. No build step. No database.** Just deploy the files.
+A lightning-fast, full-screen, swipeable news feed — a TikTok-style reader for
+Markets, Tech, and Politics. Static front-end (no build step), **real Postgres
+database via Supabase**, installable as a **PWA**, works offline.
 
 ---
 
 ## Features
 
-- **Full-screen snap feed** — one story per screen, swipe/scroll to advance
-- **Durable content** — loads from a live Google Sheet if configured, falls back to a
-  bundled `stories.json`, then to inline backup data, so the feed is **never empty**
-- **Category filters** built automatically from whatever categories your data contains
-- **Installable PWA** — "Add to Home Screen", runs full-screen, works offline via a
-  service worker
-- **Likes** (saved locally), **native share**, double-tap to like, slide-up "deep dive"
-  modal, scroll progress bar, skeleton loader, toast notifications
-- **Working subscribe** — POSTs to an endpoint you configure, or falls back to a
-  `mailto:` link so it always does something
+- **Immersive story cards** — full-bleed imagery with cinematic overlays, category
+  color glows, staggered content reveals, and parallax as you scroll
+- **Super-app interactions** — vertical action rail (like / share / dive),
+  double-tap heart bursts, swipe right to like, swipe left for the deep dive,
+  pull-to-refresh, confetti when you're caught up, haptic feedback
+- **Real database (Supabase)** — stories live in Postgres, **like counts are global**
+  (every heart on every phone updates the same counter), subscriber emails are
+  actually stored
+- **Never-empty fallback chain** — Supabase → bundled `stories.json` → inline backup
+- **Dynamic category filters** built from whatever categories your data contains
+- **Installable PWA** — add to home screen, runs full-screen, offline app-shell cache
+- Bottom-sheet deep-dive modal with swipe-down-to-close, toasts, scroll progress,
+  story counter, skeleton loader
 
 ---
 
 ## Run it locally
 
-Because the app fetches `stories.json`, open it through a local server (not `file://`):
+The app fetches `stories.json`, so serve it (not `file://`):
 
 ```bash
-# any static server works; pick one you have
 python3 -m http.server 8000
-# then open http://localhost:8000
+# open http://localhost:8000
 ```
 
-## Make it yours
+---
 
-All configuration lives at the top of [`app.js`](app.js) in the `CONFIG` object:
+## Set up the database (Supabase, free — ~5 minutes)
 
-| Setting | What it does |
+1. Create a free project at [supabase.com](https://supabase.com).
+2. In the project: **SQL Editor → New query**, paste the whole contents of
+   [`supabase-setup.sql`](supabase-setup.sql), and **Run**. This creates the
+   `stories` and `subscribers` tables, safe row-level-security policies, the
+   like-counter functions, and seeds 6 starter stories.
+3. In **Settings → API**, copy the **Project URL** and the **anon public** key.
+4. Paste both into the `CONFIG` object at the top of [`app.js`](app.js):
+
+```js
+const CONFIG = {
+  supabaseUrl: "https://YOURPROJECT.supabase.co",
+  supabaseAnonKey: "eyJ...your anon key...",
+  contactEmail: "you@yourdomain.com",
+};
+```
+
+That's it. The anon key is safe to ship in client code — visitors can only do what
+the RLS policies allow: read published stories, bump like counters, and insert an
+email into `subscribers` (they can never read the subscriber list).
+
+### Publishing stories
+
+Open **Table Editor → stories** in Supabase and add a row — it appears in the app
+instantly, no deploy needed. Columns:
+
+| Column | Meaning |
 | --- | --- |
-| `sheetUrl` | A **published** Google Sheet CSV URL. Rows overlay the bundled content. Leave `""` to use `stories.json` only. |
-| `subscribeEndpoint` | A form endpoint (e.g. [Formspree](https://formspree.io)) that receives `{ "email": ... }`. Leave `""` for the `mailto:` fallback. |
-| `contactEmail` | Address used by the `mailto:` fallback. |
+| `position` | Feed order (low = first) |
+| `category` | e.g. `MARKETS`, `TECH`, `POLITICS` — filters build themselves |
+| `headline`, `hook`, `body` | Card text (big title, colored one-liner, preview) |
+| `deep_dive` | Long text shown in the bottom-sheet modal |
+| `source_url`, `image` | Optional link + image URL |
+| `theme` | `red`, `blue`, or `green` (controls the card's color glow) |
+| `published` | Set `false` to draft/hide a story |
 
-### Adding stories
-
-**Option A — edit the file.** Update [`stories.json`](stories.json) and redeploy. Each
-story looks like:
-
-```json
-{
-  "category": "TECH",
-  "headline": "Short, punchy headline",
-  "hook": "One-line hook shown under the headline.",
-  "body": "The preview paragraph shown on the card.",
-  "deep_dive": "The longer text shown in the tap-to-read modal.",
-  "source_url": "https://example.com/full-article",
-  "image": "https://…",
-  "theme": "blue"
-}
-```
-
-`theme` is `red`, `blue`, or `green`. `image` and `source_url` are optional.
-
-**Option B — publish from a Google Sheet.** In the Sheet, use columns in this order:
-`id | category | headline | hook | body | deep_dive | source_url | image | theme`
-(the first row is treated as a header and skipped, and column A / `id` is ignored).
-Then **File → Share → Publish to web → CSV**, and paste that URL into `CONFIG.sheetUrl`.
+If Supabase isn't configured (or unreachable), the app silently falls back to
+[`stories.json`](stories.json), so the feed always works.
 
 ---
 
 ## Deploy (free, via GitHub Pages)
 
-A workflow at [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) publishes
-the site on every push to `main`. To turn it on once:
+A workflow at [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
+publishes the site on every push to `main`. One-time setup:
 
 1. Push to `main`.
-2. In the repo, go to **Settings → Pages → Build and deployment → Source** and select
-   **GitHub Actions**.
-3. Your site goes live at `https://<user>.github.io/micro-news/`.
+2. Repo **Settings → Pages → Build and deployment → Source** → **GitHub Actions**.
+3. Live at `https://<user>.github.io/micro-news/`.
 
-Any other static host (Netlify, Vercel, Cloudflare Pages) also works — just serve the
-repo root.
+Any static host (Netlify, Vercel, Cloudflare Pages) also works.
 
 ---
 
@@ -89,11 +94,12 @@ repo root.
 
 ```
 index.html              # markup + PWA/meta tags
-style.css               # all styling
-app.js                  # data loading, rendering, interactions, PWA registration
+style.css               # design system (deep-ink base, sunset gradient brand)
+app.js                  # data loading, Supabase client, rendering, gestures, FX
 stories.json            # bundled fallback / demo content
+supabase-setup.sql      # one-shot database setup: tables, RLS, RPCs, seed data
 manifest.webmanifest    # PWA manifest
 sw.js                   # service worker (offline app-shell cache)
-icons/                  # app icons (192, 512, apple-touch)
+icons/                  # app icons
 .github/workflows/      # GitHub Pages deploy
 ```

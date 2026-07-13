@@ -19,7 +19,7 @@
 
     <!-- PWA -->
     <link rel="manifest" href="manifest.webmanifest">
-    <meta name="theme-color" content="#09090b">
+    <meta name="theme-color" content="#0b0a10">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -28,6 +28,11 @@
     <!-- Favicon + app icons -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+    <!-- Display font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
     <!-- Social Sharing Tags -->
     <meta property="og:title" content="High Frequency">
@@ -46,41 +51,49 @@
 
     <!-- 2. HEADER -->
     <header class="app-header">
-        <div class="brand"><h1>HF//APP</h1></div>
-        <nav class="filter-bar">
-            <button class="filter-btn active" data-filter="ALL">All</button>
-            <button class="filter-btn" data-filter="MARKETS">Markets</button>
-            <button class="filter-btn" data-filter="TECH">Tech</button>
-            <button class="filter-btn" data-filter="POLITICS">Politics</button>
-        </nav>
-        <div class="status-indicator">
-            <span class="live-dot"></span>
+        <div class="brand">
+            <span class="brand-bolt">⚡</span>
+            <h1>HF<span class="brand-slash">//</span>APP</h1>
+        </div>
+        <nav class="filter-bar" id="filter-bar" aria-label="Categories"></nav>
+        <div class="header-right">
+            <span id="story-counter" class="counter-chip" aria-live="polite"></span>
+            <span class="live-dot" title="Live"></span>
         </div>
     </header>
 
-    <!-- 3. FEED CONTAINER -->
+    <!-- 3. PULL-TO-REFRESH INDICATOR -->
+    <div id="ptr" class="ptr" aria-hidden="true"><span class="ptr-bolt">⚡</span></div>
+
+    <!-- 4. FEED CONTAINER -->
     <main id="feed-container" class="scroll-container">
         <!-- Skeleton Loader -->
         <article class="card skeleton-card">
-            <div class="skeleton-line title"></div>
-            <div class="skeleton-line text"></div>
-            <div class="skeleton-line text"></div>
+            <div class="card-content">
+                <div class="skeleton-line chip"></div>
+                <div class="skeleton-line title"></div>
+                <div class="skeleton-line title short"></div>
+                <div class="skeleton-line text"></div>
+                <div class="skeleton-line text"></div>
+            </div>
         </article>
     </main>
 
-    <!-- 4. MODAL -->
+    <!-- 5. EFFECTS LAYER (hearts, confetti) -->
+    <div id="fx-layer" class="fx-layer" aria-hidden="true"></div>
+
+    <!-- 6. MODAL -->
     <div id="story-modal" class="modal-overlay hidden" aria-hidden="true">
         <div class="modal-content">
-            <button id="close-modal" class="close-btn">&times;</button>
-            <div id="modal-body-content"></div>
-            <a href="#" id="modal-source-link" target="_blank" class="read-more-btn">Read Source</a>
+            <div class="modal-handle" aria-hidden="true"></div>
+            <button id="close-modal" class="close-btn" aria-label="Close">&times;</button>
+            <div id="modal-body-content" class="modal-scroll"></div>
+            <a href="#" id="modal-source-link" target="_blank" rel="noopener" class="read-more-btn">Read Source</a>
         </div>
     </div>
 
-    <!-- 5. TOAST NOTIFICATIONS -->
+    <!-- 7. TOAST NOTIFICATIONS -->
     <div id="toast-container" class="toast-container"></div>
 
 </body>
 </html>
-
-
