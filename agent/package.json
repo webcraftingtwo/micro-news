@@ -1,0 +1,14 @@
+{
+  "name": "hf-news-agent",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Scheduled agent that summarizes RSS news into High Frequency cards via the Claude API and publishes them to Supabase.",
+  "scripts": {
+    "fetch": "node fetch-news.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.70.0",
+    "rss-parser": "^3.13.0"
+  }
+}

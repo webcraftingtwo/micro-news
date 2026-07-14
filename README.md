@@ -77,6 +77,50 @@ If Supabase isn't configured (or unreachable), the app silently falls back to
 
 ---
 
+## 🤖 The News Agent (auto-publishing)
+
+The repo includes an AI agent ([`agent/fetch-news.mjs`](agent/fetch-news.mjs)) that
+keeps the feed fresh **without any manual work**:
+
+1. Pulls the latest items from RSS feeds (The Verge, Ars Technica, MarketWatch,
+   CNBC, BBC, Politico — edit the `FEEDS` list to change sources)
+2. Skips anything already in the database (deduped by `source_url`)
+3. Has **Claude** rewrite each new item into the card format — headline, hook,
+   body, and deep dive — in High Frequency's editorial voice, constrained to a
+   strict JSON schema so output is always valid
+4. Inserts the new stories into Supabase (each card links back to the original
+   article via "Read Source") and unpublishes stories beyond the newest 40
+
+It runs automatically **every 6 hours** via
+[`.github/workflows/news-agent.yml`](.github/workflows/news-agent.yml), and can be
+triggered manually from the repo's **Actions** tab.
+
+### Agent setup (one time)
+
+Add three repository secrets (**Settings → Secrets and variables → Actions**):
+
+| Secret | Where to get it |
+| --- | --- |
+| `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) → API Keys |
+| `SUPABASE_URL` | Supabase → Settings → API → Project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Settings → API → `service_role` key (server-side only — never put this one in the web app) |
+
+### Run it locally
+
+```bash
+cd agent && npm install
+ANTHROPIC_API_KEY=sk-... SUPABASE_URL=https://... SUPABASE_SERVICE_ROLE_KEY=... \
+  node fetch-news.mjs
+
+# Or test without writing to the database:
+DRY_RUN=1 ANTHROPIC_API_KEY=... SUPABASE_URL=x SUPABASE_SERVICE_ROLE_KEY=x node fetch-news.mjs
+```
+
+Tunables: `MAX_NEW_STORIES` (default 6 per run), `MAX_PER_CATEGORY`, `KEEP_PUBLISHED`,
+and the model — all at the top of `fetch-news.mjs`.
+
+---
+
 ## Deploy (free, via GitHub Pages)
 
 A workflow at [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
@@ -101,5 +145,6 @@ supabase-setup.sql      # one-shot database setup: tables, RLS, RPCs, seed data
 manifest.webmanifest    # PWA manifest
 sw.js                   # service worker (offline app-shell cache)
 icons/                  # app icons
-.github/workflows/      # GitHub Pages deploy
+agent/                  # AI news agent (RSS → Claude → Supabase)
+.github/workflows/      # GitHub Pages deploy + scheduled news agent
 ```
